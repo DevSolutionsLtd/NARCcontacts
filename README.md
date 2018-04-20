@@ -8,11 +8,11 @@ An R package to make managing data a little easier for 'Nehemians'.
 Installation
 ------------
 
-You can install NARCcontacts from github with:
+You can install NARCcontacts from GitHub with:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("DevSolutions/NARCcontacts")
+devtools::install_github("DevSolutionsLtd/NARCcontacts")
 ```
 
 Instructions for use
