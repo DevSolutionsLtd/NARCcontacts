@@ -1,7 +1,7 @@
 # test-helpers.R
 
 ############################################
-context("Importation of Excel files into R")
+context("Data importation")
 
 samplFile1 <- excelFile('test-file-1.xls')
 samplFile2 <- excelFile("test-file-2.xlsx")
@@ -29,7 +29,7 @@ test_that("Objects are properly instantiated", {
 
 
 ################################################
-context("Integrity of individual spreadsheets")
+context("Spreadsheet integrity")
 
 header <- c("serialno", "name", "phone", "address", "email", "bday.day",
             "bday.mth", "wedann.day", "wedann.mth", "occupation", "church",
@@ -62,7 +62,7 @@ test_that("Spreadsheets are properly extracted", {
 
 
 ###################################
-context("Regex pattern matching")
+context("Regular expressions")
 
 test_that("Object class with regex patterns is properly instantiated", {
     column <-
@@ -89,7 +89,7 @@ test_that("Object class with regex patterns is properly instantiated", {
 
 
 ###################################
-context("Ensuring data integrity.")
+context("Data integrity")
 
 test_that("Wrong mobile numbers are repaired or removed.", {
     numbers <-
@@ -116,7 +116,7 @@ test_that("Wrong mobile numbers are repaired or removed.", {
 
 
 ##################################################
-context("Structural modification of data frames")
+context("Data frame restructuring")
 
 test_that("'Month' values are corrected.", {
     mths <-
@@ -172,15 +172,16 @@ test_that("Date entries are fixed", {
     expect_equal(newDates2$bday.mth[3], "December")
 })
 
-test_that("Numeric Excel date entries are converted to text format.", {
-    result <- .convert_num_date_to_char(c("41235", "43322"))
+test_that("numeric Excel dates are converted to text", {
 
-    expect_equal(result[1], "22 November")
-    expect_equal(result[2], "10 August")
+    expect_error(.convert_num_date_to_char(c("41235", "43322")),
+                 "More than one entry was provided")
+    expect_equal(.convert_num_date_to_char(c("41235")), "22 November")
+    expect_equal(.convert_num_date_to_char(c("43322")), "10 August")
 })
 
 
-test_that("Unwanted characters/entries are removed entirely", {
+test_that("unwanted characters/entries are removed", {
 
     smpl <- c("24 Feb/Sept",
               "Mar/Jun 10",
@@ -188,12 +189,15 @@ test_that("Unwanted characters/entries are removed entirely", {
               "Aug, 6",
               "12/05/1989",
               "31 Oct/6 July")
-    smpl <- .preprocess_date_entry(smpl)
+    res <- .cleanup_date_entries(smpl)
 
-    expect_equal(smpl[1], "24 Feb")
-    expect_equal(smpl[2], "")
-    expect_equal(smpl[3], "April  4")
-    expect_equal(smpl[4], "Aug  6")
-    expect_equal(smpl[5], "12/05")
-    expect_equal(smpl[6], "31 Oct/6 July")  # unchanged
+    expect_equivalent(res[1], "24 Feb")
+    expect_equivalent(res[2], "")
+    expect_equivalent(res[3], "April  4")
+    expect_equivalent(res[4], "Aug  6")
+    expect_equivalent(res[5], "12/05")
+    expect_equivalent(res[6], "31 Oct/6 July")  # returned unchanged
+
+    ## Check for return of named character vector, source of previous bug
+    expect_identical(smpl, attr(res, "name"))
 })

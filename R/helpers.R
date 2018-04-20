@@ -76,21 +76,20 @@ print.excelFile <- function(xlObj) {
 
 
 
-
-## S3 method to provide a summary of the object
-summary.excelFile <- function(xlobj) {
-    cat(paste0(
-        "File: ",
-        sQuote(xlObj$fileName),
-        ". Size:",
-        xlObj$fileSize,
-        "B\n"
-    ))
-    cat("Spreadsheet(s):\n")
-    for (i in 1:xlObj$noOfSheets) {
-        cat(paste0(i, ". ", sQuote(xlObj$sheets), "\n"))
-    }
-}
+## TODO: S3 method to provide a summary of the object
+# summary.excelFile <- function(xlobj) {
+#     cat(paste0(
+#         "File: ",
+#         sQuote(xlObj$fileName),
+#         ". Size:",
+#         xlObj$fileSize,
+#         "B\n"
+#     ))
+#     cat("Spreadsheet(s):\n")
+#     for (i in 1:xlObj$noOfSheets) {
+#         cat(paste0(i, ". ", sQuote(xlObj$sheets), "\n"))
+#     }
+# }
 
 
 
@@ -186,35 +185,38 @@ regexIndices <- function(rules, col) {
 
 ## Finds all existing Excel files within a given directory
 find_excel_files <- function(path = ".", quietly = FALSE) {
-    # TODO: There are situations when a file's extension
-    # may not be specified and thus there may be need to
-    # test such files to know whether they are of the format.
-    xlFiles <-
-        list.files(path, pattern = ".xlsx$|.xls$", full.names = TRUE) %>%
-        subset(!grepl("(~\\$)+", .))    # remove any backup files (Windows)
+  # TODO: There are situations when a file's extension
+  # may not be specified and thus there may be need to
+  # test such files to know whether they are of the format.
 
-    numFiles <- length(xlFiles)
-    if (!numFiles) {
-        stop("There are no Excel files in this directory.")
-    } else {
-        if (!quietly) {
-            cat(sprintf(
-                ngettext(
-                    numFiles,
-                    "\t%d Excel file was found in %s:\n",
-                    "\t%d Excel files were found in %s:\n"
-                ),
-                numFiles,
-                sQuote(path.expand(path))
-            ))
+  xlFiles <-
+    list.files(path, pattern = ".xlsx$|.xls$", full.names = TRUE)
 
-            ## List the files
-            sapply(xlFiles, function(x) {
-                cat(sprintf("\t  * %s\n", basename(x)))
-            })
-        }
+  # remove any backup files (Windows)
+  xlFiles <- subset(xlFiles, !grepl("(~\\$)+", xlFiles))
+
+  numFiles <- length(xlFiles)
+  if (!numFiles) {
+    stop("There are no Excel files in this directory.")
+  } else {
+    if (!quietly) {
+      cat(sprintf(
+        ngettext(
+          numFiles,
+          "\t%d Excel file was found in %s:\n",
+          "\t%d Excel files were found in %s:\n"
+        ),
+        numFiles,
+        sQuote(path.expand(path))
+      ))
+
+      ## List the files
+      sapply(xlFiles, function(x) {
+        cat(sprintf("\t  * %s\n", basename(x)))
+      })
     }
-    xlFiles
+  }
+  xlFiles
 }
 
 
@@ -446,19 +448,20 @@ set_datatypes <- function(df) {
 
 ## Fixes up mobile numbers to a uniform text format
 #' @importFrom dplyr %>%
+#' @importFrom stringr str_replace
 .fix_phone_numbers <- function(column) {
     # Remove entries that are beyond redemption i.e. too long or too short
-    column <- column %>%
-        ifelse(nchar(.) > 11 | nchar(.) < 10, NA_character_, .)
+    column <-
+        ifelse(nchar(column) > 11 | nchar(column) < 10, NA_character_, column)
 
     # Add a leading '0' if there are 10 digits
     column <- column %>%
         as.character() %>%
-        gsub("(^[0-9]{10}$)", "0\\1", .)
+        str_replace("(^[0-9]{10}$)", "0\\1")
 
     # Remove those that still don't look like local mobile numbers (NG)
-    column <- column %>%
-        ifelse(grepl("^0[7-9][0-1][0-9]{8}$", .), ., NA_character_)
+    column <-
+        ifelse(grepl("^0[7-9][0-1][0-9]{8}$", column), column, NA_character_)
 }
 
 
@@ -474,6 +477,7 @@ set_datatypes <- function(df) {
 ## creating new columns that contain only day and month values
 #' @importFrom dplyr %>%
 #' @importFrom dplyr bind_cols
+#' @importFrom stats na.exclude
 fix_date_entries <- function(df) {
   ## Identify by name columns in the original data frame
     ## that are likely to contain the awkard entries
@@ -519,23 +523,23 @@ fix_date_entries <- function(df) {
 ## 4. Changing of all abbreviated month names to full version
 ## @return a four-column data frame with days and months of
 ## birthdays and wedding anniversaries, respectively
+##
+#' @import hellno
 .process_date_entries <- function(df, awkardColNames) {
-    stopifnot(is.character(awkardColNames)) # TODO: Rather pattern compatibility?
-    newColHdr <- c("bday.day", "bday.mth", "wedann.day", "wedann.mth")
-    temp.df <-
-        data.frame(matrix("", nrow = nrow(df), ncol = length(newColHdr)))
-    lapply(awkardColNames, function(name) {
-        dfColumn <- df[name] %>%
-            .cleanup_date_entries()
-
-        dfColumn <-
-            sapply(unlist(dfColumn), .convert_num_date_to_char, USE.NAMES = FALSE) %>%
-            as.data.frame()
-
-        temp.df <<- .distribute_date_vals(temp.df, dfColumn, name)
-    })
-    colnames(temp.df) <- newColHdr
-    temp.df <- .change_to_full_mth_names(temp.df)
+  stopifnot(is.character(awkardColNames)) # TODO: Rather pattern compatibility?
+  newColHdr <- c("bday.day", "bday.mth", "wedann.day", "wedann.mth")
+  temp.df <-
+    data.frame(matrix("", nrow = nrow(df), ncol = length(newColHdr)))
+  lapply(awkardColNames, function(name) {
+    dfColumn <- df[[name]] %>%
+      .cleanup_date_entries()
+    dfColumn <-
+      sapply(dfColumn, .convert_num_date_to_char, USE.NAMES = FALSE) %>%
+      as.data.frame()
+    temp.df <<- .distribute_date_vals(temp.df, dfColumn, name)
+  })
+  colnames(temp.df) <- newColHdr
+  temp.df <- .change_to_full_mth_names(temp.df)
 }
 
 
@@ -550,21 +554,23 @@ fix_date_entries <- function(df) {
 ## Converts entries that consist of two numbers separated by a forward
 ## slash into a leading numeral for days and fully spelt out month
 #' @importFrom dplyr %>%
+#' @importFrom stringr str_replace
 #' @importFrom stringr str_trim
 .convert_dbl_digit_to_char <- function(entry, thisPat) {
-    if (grepl(thisPat, entry)) {
-        mnthString <-
-            entry %>%
-            gsub(thisPat, "\\3", .) %>%
-            str_trim() %>%
-            as.numeric() %>%
-            month.name[.]
-    }
-    else {
-        return(entry)
-    }
+  if (grepl(thisPat, entry)) {
+    mnthString <-
+      entry %>%
+      str_replace(thisPat, "\\3") %>%
+      str_trim() %>%
+      as.numeric()
+    mnthString <- month.name[mnthString]
+  }
+  else {
+    return(entry)
+  }
 
-    updatedStr <- paste(str_trim(gsub(thisPat, "\\1", entry)), mnthString)
+  updatedStr <-
+    paste(str_trim(gsub(thisPat, "\\1", entry)), mnthString)
 }
 
 
@@ -607,22 +613,21 @@ fix_date_entries <- function(df) {
 #' @importFrom stringr str_replace_all
 #' @importFrom stringr str_trim
 .cleanup_date_entries <- function(datesCol) {
-    sapply(datesCol, function(cell) {
-        cell %>%
-            str_replace(
-                "(^\\s*[[:digit:]]{1,2}\\s+[[:alpha:]]+)/[[:alpha:]]+\\s*$",
-                replacement = "\\1"
-            ) %>%
-            str_replace(
-                "^\\s*[[:alpha:]]{3,}/[[:alpha:]]{3,}\\s*[[:digit:]]{1,2}\\s*$",
-                replacement = ""
-            ) %>%
-            str_replace("(/|\\s)([[:alnum:]]{2,})(/|\\s)([[:digit:]]{4}$)",
-                        replacement = "\\1\\2") %>%
-            str_replace("nd|rd|st|th", replacement = "") %>%
-            str_replace_all("[,|.|-]", replacement = " ") %>%
-            str_trim()
-    }) %>% as.data.frame()
+  res <- sapply(datesCol, function(cell) {
+    cell %>%
+      str_replace("(^\\s*[[:digit:]]{1,2}\\s+[[:alpha:]]+)/[[:alpha:]]+\\s*$",
+                  replacement = "\\1") %>%
+      str_replace(
+        "^\\s*[[:alpha:]]{3,}/[[:alpha:]]{3,}\\s*[[:digit:]]{1,2}\\s*$",
+        replacement = ""
+      ) %>%
+      str_replace("(/|\\s)([[:alnum:]]{2,})(/|\\s)([[:digit:]]{4}$)",
+                  replacement = "\\1\\2") %>%
+      str_replace("nd|rd|st|th", replacement = "") %>%
+      str_replace_all("[,|.|-]", replacement = " ") %>%
+      str_trim()
+  })
+  res
 }
 
 
@@ -637,19 +642,23 @@ fix_date_entries <- function(df) {
 ## - one for the origin, which Excel includes unlike
 ##   the POSIX standard that we are using in R, and
 ## - the 1900 that EXcel erroneously identifies as a leap year.
-.convert_num_date_to_char <- function(str) {
-    number <- suppressWarnings(as.numeric(str))
-    if (is.na(number)) return(str)
+## Receives as input a single numerical date entry
+.convert_num_date_to_char <- function(entry) {
+  if (length(entry) > 1L)
+    stop("More than one entry was provided")
+  number <- suppressWarnings(as.numeric(entry))
+    if (is.na(number))
+      return(entry)
 
-    # TODO:
-    ## 1. Add condition for case where full date is counted
-    ## and the year is not the present year (use min reasonable value)
-    ## 2. Also do not accept dates that are in the future
+  # TODO:
+  ## 1. Add condition for case where full date is counted
+  ## and the year is not the present year (use min reasonable value)
+  ## 2. Also do not accept dates that are in the future
 
-    correct <- 2L
-    invisible(
-        format(as.Date(number - correct, origin = "1900-01-01"), "%d %B")
-        )
+  correct <- 2L
+  invisible(
+    format(as.Date(number - correct, origin = "1900-01-01"), "%d %B")
+    )
 }
 
 
@@ -664,9 +673,9 @@ fix_date_entries <- function(df) {
 ## Before setting the indices for the patterns, we have to convert
 ## those entries with the numerical (D)D/MM format character-based
 ## month values e.g. from 13/06 to 13 June
+#' @import hellno
 #' @importFrom dplyr %>%
 .distribute_date_vals <- function(tempDF, column, col.name) {
-    require(hellno)
     stopifnot(identical(nrow(tempDF), nrow(column)))
     rules <- regexPatterns()
     column <- sapply(unlist(column), function(x) {
@@ -712,10 +721,11 @@ fix_date_entries <- function(df) {
 ## @param beacon a backreference used for substition of grouped patterns
 ## @details whitespace trimming is also carried out
 #' @importFrom dplyr %>%
+#' @importFrom stringr str_replace
 #' @importFrom stringr str_trim
 .extract_date_values <- function(column, rules, index, beacon) {
     column[index] %>%
-        gsub(rules, beacon, .) %>%
+        str_replace(rules, beacon) %>%
         str_trim()
 }
 
@@ -734,25 +744,25 @@ fix_date_entries <- function(df) {
 #' @importFrom stringr str_to_title
 #' @importFrom stringr str_trim
 .fix_mth_entries <- function(mth.col) {
-    stopifnot(is.vector(mth.col))
+  stopifnot(is.vector(mth.col))
 
-    isInvalid <- grepl("[[:punct:]]|[[:digit:]]", mth.col)
-    if (any(isInvalid)) {
-        pos <- which(isInvalid)
-        stop(sprintf("An invalid character was found at position %d.", pos))
-    }
+  isInvalid <- grepl("[[:punct:]]|[[:digit:]]", mth.col)
+  if (any(isInvalid)) {
+    pos <- which(isInvalid)
+    stop(sprintf("An invalid character was found at position %d.", pos))
+  }
 
-    sapply(mth.col, function(string) {
-        string %>%
-            str_trim() %>%
-            gsub(
-                "^(Ja|F|Mar|Ap|May|Jun|Jul|Au|S|O|N|D)[[:alpha:]]*$",
-                "\\1",
-                .,
-                ignore.case = TRUE
-            ) %>%
-            str_to_title() %>%
-            pmatch(month.name) %>%
-            month.name[.]
-    }) %>% as_tibble()
+  sapply(mth.col, function(string) {
+    str <- str_trim(string)
+    str <-
+      gsub(
+        "^(Ja|F|Mar|Ap|May|Jun|Jul|Au|S|O|N|D)[[:alpha:]]*$",
+        "\\1",
+        str,
+        ignore.case = TRUE
+      )
+    str <- str_to_title(str)
+    str <- pmatch(str, month.name)
+    month.name[str]
+  }) %>% as_tibble()
 }
