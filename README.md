@@ -28,4 +28,4 @@ harmonise_narc_excel("path/to/Contacts")
 Disclaimer
 ----------
 
-The package is developed for a particular client, but with some tweaking can be extended for more generic use.
+The package is developed for Nehemiah Apostolic Resource Centre, Abuja, Nigeria, but with some tweaking it can be extended to more generic uses.
