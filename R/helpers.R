@@ -175,14 +175,6 @@ regexIndices <- function(rules, col) {
 ##         Custom functions created for 'narc-dfmerge.R'         ##
 ###################################################################
 
-
-
-
-
-
-
-
-
 ## Finds all existing Excel files within a given directory
 find_excel_files <- function(path = ".", quietly = FALSE) {
   # TODO: There are situations when a file's extension
@@ -219,6 +211,29 @@ find_excel_files <- function(path = ".", quietly = FALSE) {
   xlFiles
 }
 
+
+
+
+
+
+
+
+#' Collect Excel Files
+#'
+#' Searches the machine's HOME directory tree for Excel files and puts them
+#' into a separate directory.
+#'
+#' @details This function is a wrapper for \code{\link[exhale]{collate_excel}}
+#'
+#' @return The function has no return value.
+#'
+#' @importFrom exhale collate_excel
+#'
+#' @export
+gather_excel_files <- function()
+{
+  collate_excel()
+}
 
 
 
