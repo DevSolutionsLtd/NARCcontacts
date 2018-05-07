@@ -1,24 +1,65 @@
 #' Harmonise Nehemiah's Data
 #'
-#' Merge data belonging to Nehemia Apostolic Resource Centre into one database
-#' file.
+#' Merge mailing list belonging to Nehemiah Apostolic Resource Centre
 #'
-#' @param dir Path to the folder (hopefully) containing Excel files
+#' @details Mailing list data that exist in different MS Excel files are
+#' nto one are discovered and combined into a single SQLite database file.
+#' Necessary transformations are carried out to ensure fitness.
+#'
+#' @param dir character vector of length 1; the path to the folder contains
+#' the Excel files.
+#' @param quiet logical; whether to print informative output or not.
 #'
 #' @import dplyr
 #' @import RSQLite
+#' @importFrom exhale locate_header
 #'
 #' @export
-harmonise_narc_excel <- function(dir)
+harmonise_narc_excel <- function(dir, quiet = FALSE)
 {
   stopifnot(is.character(dir))
-  dir <- normalizePath(dir)
+  if (length(dir) > 1) {
+    dir <- dir[1]
+    warning("Length of 'dir' is > 1 and only the first element was used")
+  }
+  dir <- suppressWarnings(normalizePath(dir))
   if (!dir.exists(dir))
-    stop(paste("There is no directory called", sQuote(dir)))
+    stop(paste("There is no directory called", sQuote(basename(dir))))
 
-  cat("Checking for Excel files in the directory...\n")
-  filepaths <- find_excel_files(dir)
-  cat("Importing details of Excel file(s) into R... ")
+  ## Output Messages
+  msgs <-
+    c(
+      "\nChecking for Excel files in the directory...\n",
+      "Importing details of Excel file(s) into R... ",
+      "Identifying and afixing original headers... ",
+      "Working on date-related columns... ",
+      "Updating original headers... ",
+      "Rearranging columns to suit the prescribed format... ",
+      "Merging data frames... ",
+      "Setting the data types... ",
+      "Creating output directory... ",
+      "Writing to database... ",
+      "\nThat's all.\n"
+    )
+
+  ## Internal functions for output
+  success <- function(){
+    if(!quiet)
+      cat("Done\n")
+  }
+
+  print_msg <- function(n = 1) {
+    if (quiet)
+      return(NULL)
+    n <- as.integer(n)
+    cat(msgs[n])
+    nxt <- n + 1
+  }
+
+
+  msgIndex <- print_msg()
+  filepaths <- list_excel_files(dir, quietly = quiet)
+  msgIndex <- print_msg(msgIndex)
   excelList <- lapply(filepaths, excelFile)
 
   ## In case there's more than one spreadsheet in a workbook
@@ -32,11 +73,28 @@ harmonise_narc_excel <- function(dir)
     df_row_num <- sapply(df.ls, nrow)
     df.ls <- df.ls[which(df_row_num != 0)]
   }
-  cat("Done\n")
+  success()
 
-  cat("Identifying and afixing original headers... ")
+  msgIndex <- print_msg(msgIndex)
+
+  ## The names of the columns of the new table
+  columnNames <- c(
+    "serialno",
+    "name",
+    "phone",
+    "address",
+    "email",
+    "bday.day",
+    "bday.mth",
+    "wedann.day",
+    "wedann.mth",
+    "occupation",
+    "church",
+    "pastor",
+    "info.source"
+  )
   df.ls <- lapply(df.ls, function(df) {
-    val <- locate_header(df, hdr = columnNames)
+    val <- exhale::locate_header(df, hdr = columnNames)
     if (!is.null(val)) {
       df <- df %>%
         slice(val$nextrow:n())
@@ -49,36 +107,36 @@ harmonise_narc_excel <- function(dir)
       df <- data.frame(0)
     }
   })
-  cat("Done\n")
+  success()
 
-  cat("Working on date-related columns... ")
+  msgIndex <- print_msg(msgIndex)
   df.ls <- lapply(df.ls, fix_date_entries)
-  cat("Done\n")
+  success()
 
-  cat("Updating original headers... ")
+  msgIndex <- print_msg(msgIndex)
   df.ls <- lapply(df.ls, update_header, newCol = columnNames)
-  cat("Done\n")
+  success()
 
-  cat("Rearranging columns to suit the prescribed format... ")
+  msgIndex <- print_msg(msgIndex)
   df.ls <- lapply(df.ls, rearrange_df, columnNames)
-  cat("Done\n")
+  success()
 
-  cat("Merging data frames... ")
+  msgIndex <- print_msg(msgIndex)
   master <- combine_dfs(df.ls)
-  cat("Done\n")
+  success()
 
-  cat("Setting the data types... ")
+  msgIndex <- print_msg(msgIndex)
   master <- set_datatypes(master)
-  cat("Done\n")
+  success()
 
 
-  cat("Creating output directory... ")
+  msgIndex <- print_msg(msgIndex)
   folder <- file.path(dir, "harmonised-data")
   if (!dir.exists(folder))
     dir.create(folder)
-  cat("Done\n")
+  success()
 
-  cat("Writing to database... ")
+  msgIndex <- print_msg(msgIndex)
   con <-
     dbConnect(SQLite(), file.path(folder, "NARC-mailing-list.db"))
   if (!dbIsValid(con))
@@ -99,7 +157,14 @@ harmonise_narc_excel <- function(dir)
   if (dbIsValid(con)) {
     warning("The database connection was not properly closed.")
   } else {
-    cat("Done\n")
+    success()
   }
-  cat("\nThat's all.\n")
+  msgIndex <- print_msg(msgIndex)
 }
+
+
+
+
+
+
+

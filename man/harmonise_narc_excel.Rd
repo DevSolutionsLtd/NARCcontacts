@@ -4,12 +4,19 @@
 \alias{harmonise_narc_excel}
 \title{Harmonise Nehemiah's Data}
 \usage{
-harmonise_narc_excel(dir)
+harmonise_narc_excel(dir, quiet = FALSE)
 }
 \arguments{
-\item{dir}{Path to the folder (hopefully) containing Excel files}
+\item{dir}{character vector of length 1; the path to the folder contains
+the Excel files.}
+
+\item{quiet}{logical; whether to print informative output or not.}
 }
 \description{
-Merge data belonging to Nehemia Apostolic Resource Centre into one database
-file.
+Merge mailing list belonging to Nehemiah Apostolic Resource Centre
+}
+\details{
+Mailing list data that exist in different MS Excel files are
+nto one are discovered and combined into a single SQLite database file.
+Necessary transformations are carried out to ensure fitness.
 }
