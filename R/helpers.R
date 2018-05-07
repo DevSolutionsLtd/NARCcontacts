@@ -1,25 +1,5 @@
 # helpers.R
 
-#####################################
-##         Base data types         ##
-#####################################
-
-## The names of the columns of the new table
-columnNames <- c(
-    "serialno",
-    "name",
-    "phone",
-    "address",
-    "email",
-    "bday.day",
-    "bday.mth",
-    "wedann.day",
-    "wedann.mth",
-    "occupation",
-    "church",
-    "pastor",
-    "info.source"
-)
 
 ################################
 ##         S3 objects         ##
@@ -176,7 +156,7 @@ regexIndices <- function(rules, col) {
 ###################################################################
 
 ## Finds all existing Excel files within a given directory
-find_excel_files <- function(path = ".", quietly = FALSE) {
+list_excel_files <- function(path = ".", quietly = FALSE) {
   # TODO: There are situations when a file's extension
   # may not be specified and thus there may be need to
   # test such files to know whether they are of the format.
@@ -202,7 +182,7 @@ find_excel_files <- function(path = ".", quietly = FALSE) {
         sQuote(path.expand(path))
       ))
 
-      ## List the files
+      ## Print the list of files
       sapply(xlFiles, function(x) {
         cat(sprintf("\t  * %s\n", basename(x)))
       })
@@ -260,43 +240,6 @@ extract_spreadsheets <- function(fileObj) {
 
 
 
-## Finds the row that likely contains the actual header and
-## returns an S3 object that is a marker to the row it occupies
-locate_header <- function(df, hdr, quietly = TRUE) {
-    if (!is.data.frame(df))
-        stop("'df' is not a valid data frame")
-    if (!is.character(hdr))
-        stop("'hdr' is not a character vector")
-
-    ## Iterate row-wise
-    val <- NULL
-    for (i in 1:nrow(df)) {
-        ## Check whether we hit something that looks like column names
-        ## and when we do, stop looking.
-        if (any(hdr %in% tolower(df[i, ]))) {
-            if (!quietly) {
-                cat(
-                    paste0(
-                        "\tA header candidate was found on row ",
-                        i,
-                        ":\n\t"
-                    ),
-                    sQuote(df[i, ]),
-                    "\n"
-                )
-            }
-            hdr <- as.character(df[i,])
-            val <- structure(list(
-                header = hdr,
-                rownum = i,
-                nextrow = i + 1
-            ),
-            class = "header-locator")
-            break
-        }
-    }
-    invisible(val)
-}
 
 
 

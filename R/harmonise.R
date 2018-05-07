@@ -12,6 +12,7 @@
 #'
 #' @import dplyr
 #' @import RSQLite
+#' @importFrom exhale locate_header
 #'
 #' @export
 harmonise_narc_excel <- function(dir, quiet = FALSE)
@@ -57,7 +58,7 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
 
 
   msgIndex <- print_msg()
-  filepaths <- find_excel_files(dir, quietly = quiet)
+  filepaths <- list_excel_files(dir, quietly = quiet)
   msgIndex <- print_msg(msgIndex)
   excelList <- lapply(filepaths, excelFile)
 
@@ -75,8 +76,25 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
   success()
 
   msgIndex <- print_msg(msgIndex)
+
+  ## The names of the columns of the new table
+  columnNames <- c(
+    "serialno",
+    "name",
+    "phone",
+    "address",
+    "email",
+    "bday.day",
+    "bday.mth",
+    "wedann.day",
+    "wedann.mth",
+    "occupation",
+    "church",
+    "pastor",
+    "info.source"
+  )
   df.ls <- lapply(df.ls, function(df) {
-    val <- locate_header(df, hdr = columnNames)
+    val <- exhale::locate_header(df, hdr = columnNames)
     if (!is.null(val)) {
       df <- df %>%
         slice(val$nextrow:n())
