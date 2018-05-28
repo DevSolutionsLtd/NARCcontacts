@@ -13,6 +13,7 @@
 #' @import dplyr
 #' @import RSQLite
 #' @importFrom exhale locate_header
+#' @importFrom tools toTitleCase
 #'
 #' @export
 harmonise_narc_excel <- function(dir, quiet = FALSE)
@@ -37,6 +38,7 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
       "Rearranging columns to suit the prescribed format... ",
       "Merging data frames... ",
       "Setting the data types... ",
+      "Converting all names to title case... ",
       "Creating output directory... ",
       "Writing to database... ",
       "\nThat's all.\n"
@@ -129,6 +131,9 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
   master <- set_datatypes(master)
   success()
 
+  msgIndex <- print_msg(msgIndex)
+  master$name <- toTitleCase(master$name)
+  success()
 
   msgIndex <- print_msg(msgIndex)
   folder <- file.path(dir, "harmonised-data")
