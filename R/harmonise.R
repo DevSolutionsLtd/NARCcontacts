@@ -8,6 +8,7 @@
 #'
 #' @param dir character vector of length 1; the path to the folder contains
 #' the Excel files.
+#' @param dest directory where the data will be stored.
 #' @param quiet logical; whether to print informative output or not.
 #'
 #' @import dplyr
@@ -16,7 +17,7 @@
 #' @importFrom tools toTitleCase
 #'
 #' @export
-harmonise_narc_excel <- function(dir, quiet = FALSE)
+harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
 {
   stopifnot(is.character(dir))
   if (length(dir) > 1) {
@@ -57,7 +58,6 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
     cat(msgs[n])
     nxt <- n + 1
   }
-
 
   msgIndex <- print_msg()
   filepaths <- list_excel_files(dir, quietly = quiet)
@@ -136,14 +136,13 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  folder <- file.path(dir, "harmonised-data")
-  if (!dir.exists(folder))
-    dir.create(folder)
+  if (!dir.exists(dest))
+    dir.create(dest)
   success()
 
   msgIndex <- print_msg(msgIndex)
   con <-
-    dbConnect(SQLite(), file.path(folder, "NARC-mailing-list.db"))
+    dbConnect(SQLite(), file.path(dest, "NARC-mailing-list.db"))
   if (!dbIsValid(con))
     stop("Connection to database failed.")
   dbTable <- "NARC_mail"

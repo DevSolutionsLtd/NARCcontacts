@@ -4,11 +4,13 @@
 \alias{harmonise_narc_excel}
 \title{Harmonise Nehemiah's Data}
 \usage{
-harmonise_narc_excel(dir, quiet = FALSE)
+harmonise_narc_excel(dir, dest = "./data", quiet = FALSE)
 }
 \arguments{
 \item{dir}{character vector of length 1; the path to the folder contains
 the Excel files.}
+
+\item{dest}{directory where the data will be stored.}
 
 \item{quiet}{logical; whether to print informative output or not.}
 }
