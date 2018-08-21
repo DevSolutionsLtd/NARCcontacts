@@ -37,7 +37,7 @@ excelfile <- function(file) {
     warning('Only the first element in "file" was used and the rest discarded')
   }
   if (!file.exists(file))
-    stop("Path ", sQuote(file), " does not exist")
+    stop("Path 'file' does not exist")
   if (!grepl('.xls$|.xlsx$', file))
     stop("Expected a file with extension '.xls' or '.xlsx'")
 
