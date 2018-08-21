@@ -5,31 +5,60 @@
 ##         S3 objects         ##
 ################################
 
-## Constructs S3 objects of class 'excelFile', which contain
-## properties associated with .xls/.xlsx files
+#' excelfile S3 Object
+#'
+#' Constructs S3 objects of class 'excelfile', which contain properties
+#' associated with .xls/.xlsx files.
+#'
+#' @param file A character vector of length \code{1} representing a path to an
+#' MS Excel file.
+#'
+#' @return An object of class \emph{excelfile}. This object is essentially a
+#' with the following elements:
+#' \itemize{
+#'   \item fileName: The full file name (including extension)
+#'   \item fileSize: The size of the file (in bytes)
+#'   \item created: The time the file was created
+#'   \item modified: The time the file was last modified
+#'   \item noOfSheets: The number of (active) spreadsheets
+#'   \item sheets: Names of the spreadsheets
+#'   \item data: A list of data frames, one for each spreadsheet
+#' }
+#'
 #' @importFrom readxl excel_sheets
 #' @importFrom readxl read_excel
-excelFile <- function(file) {
-    ## Identify individual spreadsheets
-    sheetNames <-  readxl::excel_sheets(file)
-    sheetList <- lapply(sheetNames, function(sht) {
-      readxl::read_excel(path = file, sheet = sht, col_types = "text")
-    })
+#'
+#' @export
+excelfile <- function(file) {
+  if (!is.character(file))
+    stop("Expected a character vector")
+  if (length(file) > 1) {
+    file <- file[1]
+    warning('Only the first element in "file" was used and the rest discarded')
+  }
+  if (!file.exists(file))
+    stop("Path ", sQuote(file), " does not exist")
+  if (!grepl('.xls$|.xlsx$', file))
+    stop("Expected a file with extension '.xls' or '.xlsx'")
 
-    prop <- file.info(file)
-    exf <- structure(
-        list(
-            fileName = file,
-            fileSize = prop$size,
-            created = prop$ctime,
-            modified = prop$mtime,
-            noOfSheets = length(sheetNames),
-            sheets = sheetNames,
-            data = sheetList
-        ),
-        class = "excelFile"
-    )
-    # TODO: Apply some limits.
+  ## Identify individual spreadsheets
+  sheetNames <-  readxl::excel_sheets(file)
+  sheetList <- lapply(sheetNames, function(sht) {
+    readxl::read_excel(path = file, sheet = sht, col_types = "text")})
+  prop <- file.info(file)
+  structure(
+    list(
+      fileName = file,
+      fileSize = prop$size,
+      created = prop$ctime,
+      modified = prop$mtime,
+      noOfSheets = length(sheetNames),
+      sheets = sheetNames,
+      data = sheetList
+    ),
+    class = "excelfile"
+  )
+  # TODO: Apply some limits.
 }
 
 
@@ -37,7 +66,7 @@ excelFile <- function(file) {
 
 
 ## S3 method to output information on the object
-print.excelFile <- function(xlObj) {
+print.excelfile <- function(xlObj) {
     cat(sprintf(
         ngettext(
             xlObj$noOfSheets,
@@ -57,7 +86,7 @@ print.excelFile <- function(xlObj) {
 
 
 ## TODO: S3 method to provide a summary of the object
-# summary.excelFile <- function(xlobj) {
+# summary.excelfile <- function(xlobj) {
 #     cat(paste0(
 #         "File: ",
 #         sQuote(xlObj$fileName),
@@ -152,11 +181,12 @@ regexIndices <- function(rules, col) {
 }
 
 ###################################################################
-##         Custom functions created for 'narc-dfmerge.R'         ##
+##         Custom functions created for 'harmonise.R'            ##
 ###################################################################
 
 ## Finds all existing Excel files within a given directory
-list_excel_files <- function(path = ".", quietly = FALSE) {
+listExcelFiles <- function(path = ".", quietly = FALSE)
+{
   # TODO: There are situations when a file's extension
   # may not be specified and thus there may be need to
   # test such files to know whether they are of the format.
@@ -175,8 +205,8 @@ list_excel_files <- function(path = ".", quietly = FALSE) {
       cat(sprintf(
         ngettext(
           numFiles,
-          "\t%d Excel file was found in %s:\n",
-          "\t%d Excel files were found in %s:\n"
+          "%d Excel file was found in %s:\n",
+          "%d Excel files were found in %s:\n"
         ),
         numFiles,
         sQuote(path.expand(path))
@@ -184,7 +214,7 @@ list_excel_files <- function(path = ".", quietly = FALSE) {
 
       ## Print the list of files
       sapply(xlFiles, function(x) {
-        cat(sprintf("\t  * %s\n", basename(x)))
+        cat(sprintf("* %s\n", basename(x)))
       })
     }
   }
@@ -219,15 +249,15 @@ gather_excel_files <- function()
 
 
 
-## Extracts spreadsheets from an excelFile object.
+## Extracts spreadsheets from an excelfile object.
 ## Note that this function cannot retrieve spreadsheets
 ## directly from an unprocessed .xls/.xlsx file
-extract_spreadsheets <- function(fileObj) {
-    if (inherits(fileObj, "excelFile")) {
+extractSpreadsheets <- function(fileObj) {
+    if (inherits(fileObj, "excelfile")) {
         lapply(fileObj$data, function(dat) return(dat))
     }
     else {
-        stop("'fileObj' is not an 'excelFile' object.")
+        stop("'fileObj' is not an 'excelfile' object.")
     }
 }
 
@@ -252,7 +282,7 @@ extract_spreadsheets <- function(fileObj) {
 
 ## Updates old column names of the data frame with the new
 ## ones that are to be used in the harmonised version
-update_header <- function(df, newCol) {
+updateHeader <- function(df, newCol) {
     if (!is.data.frame(df))
         stop("'df' is not a valid data frame")
 
@@ -310,7 +340,7 @@ update_header <- function(df, newCol) {
 
 ## Rearranges the columns of data frames to suit the prescribed
 ## format. Columns without values are assigned NA.
-rearrange_df <- function(df, hdr) {
+rearrangeDataFrame <- function(df, hdr) {
     if (!is.data.frame(df))
         stop("'df' is not a valid data frame.")
     if (!is.character(hdr))
@@ -345,7 +375,7 @@ rearrange_df <- function(df, hdr) {
 
 ## Combines all the data frames in the list into one master data frame
 #' @importFrom dplyr bind_rows
-combine_dfs <- function(dfs) {
+combineDataFrames <- function(dfs) {
     final <- dfs[[1]]
     for (i in 2:length(dfs)) {
         singleton <- dfs[[i]]
@@ -363,7 +393,7 @@ combine_dfs <- function(dfs) {
 
 ## Sets the columns to the appropriate data types
 #' @importFrom dplyr %>%
-set_datatypes <- function(df) {
+setDataTypes <- function(df) {
     stopifnot(inherits(df, "data.frame"))
 
     colm <- colnames(df)
@@ -374,7 +404,7 @@ set_datatypes <- function(df) {
     lapply(colm, function(var) {
         if (var %in% chars) {
             if (identical(var, "phone"))
-                df[[var]]  <- .fix_phone_numbers(df[[var]])
+                df[[var]]  <- .fixPhoneNumbers(df[[var]])
             df[[var]] <- as.character(df[[var]])
         }
         else if (var %in% cats) {
@@ -407,7 +437,7 @@ set_datatypes <- function(df) {
 ## Fixes up mobile numbers to a uniform text format
 #' @importFrom dplyr %>%
 #' @importFrom stringr str_replace
-.fix_phone_numbers <- function(column) {
+.fixPhoneNumbers <- function(column) {
     # Remove entries that are beyond redemption i.e. too long or too short
     column <-
         ifelse(nchar(column) > 11 | nchar(column) < 10, NA_character_, column)
@@ -436,7 +466,7 @@ set_datatypes <- function(df) {
 #' @importFrom dplyr %>%
 #' @importFrom dplyr bind_cols
 #' @importFrom stats na.exclude
-fix_date_entries <- function(df) {
+fixDateEntries <- function(df) {
   ## Identify by name columns in the original data frame
     ## that are likely to contain the awkard entries
     awkward <- c(
@@ -456,7 +486,7 @@ fix_date_entries <- function(df) {
 
     if (length(indexAwk)) {
         awkColHdr <- fields[indexAwk]
-        tempdf <- .process_date_entries(df, awkColHdr)
+        tempdf <- .processDateEntries(df, awkColHdr)
         df <- bind_cols(df, tempdf)
 
         df <- df[, -indexAwk]
@@ -483,21 +513,21 @@ fix_date_entries <- function(df) {
 ## birthdays and wedding anniversaries, respectively
 ##
 #' @import hellno
-.process_date_entries <- function(df, awkardColNames) {
+.processDateEntries <- function(df, awkardColNames) {
   stopifnot(is.character(awkardColNames)) # TODO: Rather pattern compatibility?
   newColHdr <- c("bday.day", "bday.mth", "wedann.day", "wedann.mth")
   temp.df <-
     data.frame(matrix("", nrow = nrow(df), ncol = length(newColHdr)))
   lapply(awkardColNames, function(name) {
     dfColumn <- df[[name]] %>%
-      .cleanup_date_entries()
+      .cleanupDateEntries()
     dfColumn <-
-      sapply(dfColumn, .convert_num_date_to_char, USE.NAMES = FALSE) %>%
+      sapply(dfColumn, .convertNumDateToChar, USE.NAMES = FALSE) %>%
       as.data.frame()
-    temp.df <<- .distribute_date_vals(temp.df, dfColumn, name)
+    temp.df <<- .distributeDateValues(temp.df, dfColumn, name)
   })
   colnames(temp.df) <- newColHdr
-  temp.df <- .change_to_full_mth_names(temp.df)
+  temp.df <- .changeToFullMonthNames(temp.df)
 }
 
 
@@ -514,7 +544,7 @@ fix_date_entries <- function(df) {
 #' @importFrom dplyr %>%
 #' @importFrom stringr str_replace
 #' @importFrom stringr str_trim
-.convert_dbl_digit_to_char <- function(entry, thisPat) {
+.convertDblDigitsToChar <- function(entry, thisPat) {
   if (grepl(thisPat, entry)) {
     mnthString <-
       entry %>%
@@ -543,11 +573,11 @@ fix_date_entries <- function(df) {
 
 
 ## Takes all abbreviated momth names and changes them to the full thing
-.change_to_full_mth_names <- function(tempDF) {
+.changeToFullMonthNames <- function(tempDF) {
     monthColumns <- which(endsWith(colnames(tempDF), "mth"))
     for (col in monthColumns) {
         months <- unlist(tempDF[, col])
-        tempDF[, col] <- .fix_mth_entries(months)
+        tempDF[, col] <- .fixMonthEntries(months)
     }
     invisible(tempDF)
 }
@@ -570,7 +600,7 @@ fix_date_entries <- function(df) {
 #' @importFrom stringr str_replace
 #' @importFrom stringr str_replace_all
 #' @importFrom stringr str_trim
-.cleanup_date_entries <- function(datesCol) {
+.cleanupDateEntries <- function(datesCol) {
   res <- sapply(datesCol, function(cell) {
     cell %>%
       str_replace("(^\\s*[[:digit:]]{1,2}\\s+[[:alpha:]]+)/[[:alpha:]]+\\s*$",
@@ -601,7 +631,7 @@ fix_date_entries <- function(df) {
 ##   the POSIX standard that we are using in R, and
 ## - the 1900 that EXcel erroneously identifies as a leap year.
 ## Receives as input a single numerical date entry
-.convert_num_date_to_char <- function(entry) {
+.convertNumDateToChar <- function(entry) {
   if (length(entry) > 1L)
     stop("More than one entry was provided")
   number <- suppressWarnings(as.numeric(entry))
@@ -633,17 +663,17 @@ fix_date_entries <- function(df) {
 ## month values e.g. from 13/06 to 13 June
 #' @import hellno
 #' @importFrom dplyr %>%
-.distribute_date_vals <- function(tempDF, column, col.name) {
+.distributeDateValues <- function(tempDF, column, col.name) {
     stopifnot(identical(nrow(tempDF), nrow(column)))
     rules <- regexPatterns()
     column <- sapply(unlist(column), function(x) {
-        .convert_dbl_digit_to_char(x, rules$num_slash_num)
+      .convertDblDigitsToChar(x, rules$num_slash_num)
         }) %>% as.data.frame()
     indices <- regexIndices(rules, column)
-    repl_vals <- function(rule, index, backref) {
+    replaceValues <- function(rule, index, backref) {
         column <- unlist(column)
         if (any(grepl(rule, column))) {
-            vals <- .extract_date_values(column, rule, index, backref)
+            vals <- .extractDateValues(column, rule, index, backref)
             tempDF[[i]] <<- replace(tempDF[[i]], index, vals)
         }
     }
@@ -651,14 +681,14 @@ fix_date_entries <- function(df) {
         if (startsWith(col.name, "B") & (i < 3L) |
             startsWith(col.name, "W") & (i > 2L)) {
             beacon <- rep(c("\\1", "\\3"), 2)
-            repl_vals(rules$sng_dd_mm, indices$sng_dd_mm, beacon[i])
+            replaceValues(rules$sng_dd_mm, indices$sng_dd_mm, beacon[i])
             beacon <- rep(c("\\3", "\\1"), 2)
-            repl_vals(rules$sng_mm_dd, indices$sng_mm_dd, beacon[i])
+            replaceValues(rules$sng_mm_dd, indices$sng_mm_dd, beacon[i])
         }
         beacon <- c("\\1", "\\3", "\\5", "\\7")
-        repl_vals(rules$dbl_dd_mm, indices$dbl_dd_mm, beacon[i])
+        replaceValues(rules$dbl_dd_mm, indices$dbl_dd_mm, beacon[i])
         beacon <- c("\\3", "\\1", "\\7", "\\5")
-        repl_vals(rules$dbl_mm_dd, indices$dbl_mm_dd, beacon[i])
+        replaceValues(rules$dbl_mm_dd, indices$dbl_mm_dd, beacon[i])
     }
     invisible(tempDF)
 }
@@ -681,7 +711,7 @@ fix_date_entries <- function(df) {
 #' @importFrom dplyr %>%
 #' @importFrom stringr str_replace
 #' @importFrom stringr str_trim
-.extract_date_values <- function(column, rules, index, beacon) {
+.extractDateValues <- function(column, rules, index, beacon) {
     column[index] %>%
         str_replace(rules, beacon) %>%
         str_trim()
@@ -701,7 +731,7 @@ fix_date_entries <- function(df) {
 #' @importFrom dplyr as_tibble
 #' @importFrom stringr str_to_title
 #' @importFrom stringr str_trim
-.fix_mth_entries <- function(mth.col) {
+.fixMonthEntries <- function(mth.col) {
   stopifnot(is.vector(mth.col))
 
   isInvalid <- grepl("[[:punct:]]|[[:digit:]]", mth.col)

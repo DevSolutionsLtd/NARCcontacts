@@ -60,16 +60,16 @@ harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
   }
 
   msgIndex <- print_msg()
-  filepaths <- list_excel_files(dir, quietly = quiet)
+  filepaths <- listExcelFiles(dir, quietly = quiet)
   msgIndex <- print_msg(msgIndex)
-  excelList <- lapply(filepaths, excelFile)
+  excelList <- lapply(filepaths, excelfile)
 
   ## In case there's more than one spreadsheet in a workbook
-  df.ls <- extract_spreadsheets(excelList[[1]])
+  df.ls <- extractSpreadsheets(excelList[[1]])
   len <- length(excelList)
   if (len > 1) {
     for (i in 2:len) {
-      tmp <- extract_spreadsheets(excelList[[i]])
+      tmp <- extractSpreadsheets(excelList[[i]])
       df.ls <- append(df.ls, tmp)
     }
     df_row_num <- sapply(df.ls, nrow)
@@ -112,23 +112,23 @@ harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  df.ls <- lapply(df.ls, fix_date_entries)
+  df.ls <- lapply(df.ls, fixDateEntries)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  df.ls <- lapply(df.ls, update_header, newCol = columnNames)
+  df.ls <- lapply(df.ls, updateHeader, newCol = columnNames)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  df.ls <- lapply(df.ls, rearrange_df, columnNames)
+  df.ls <- lapply(df.ls, rearrangeDataFrame, columnNames)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  master <- combine_dfs(df.ls)
+  master <- combineDataFrames(df.ls)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  master <- set_datatypes(master)
+  master <- setDataTypes(master)
   success()
 
   msgIndex <- print_msg(msgIndex)
