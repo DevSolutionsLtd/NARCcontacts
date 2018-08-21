@@ -11,10 +11,10 @@ test_that("excelfile constructor input is validated", {
   expect_error(excelfile(42),
                'Expected a character vector')
   expect_error(excelfile('nopath'),
-               "Path ‘nopath’ does not exist")
+               "Path 'file' does not exist")
   expect_error(excelfile('test-mainfunction.R'),
                "Expected a file with extension '.xls' or '.xlsx'")
-  expect_warning(excelfile(tst.xl.files),
+  expect_warning(excelfile(xl.files),
                  'Only the first element in "file" was used')
 })
 
