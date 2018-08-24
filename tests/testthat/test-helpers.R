@@ -1,42 +1,16 @@
 # test-helpers.R
 
-############################################
-context("Data importation")
-
-samplFile1 <- excelFile('test-file-1.xls')
-samplFile2 <- excelFile("test-file-2.xlsx")
-
-test_that("Objects are properly instantiated", {
-    expect_is(samplFile1, "excelFile")
-    expect_is(samplFile2, "excelFile")
-    expect_s3_class(samplFile1, "excelFile")
-    expect_s3_class(samplFile2, "excelFile")
-    expect_type(samplFile1$fileName, "character")
-    expect_type(samplFile1$fileSize, "double")
-    expect_type(samplFile1$created, "double")
-    expect_type(samplFile1$modified, "double")
-    expect_type(samplFile1$noOfSheets, "integer")
-    expect_type(samplFile1$sheets, "character")
-    expect_type(samplFile2$data, "list")
-    expect_type(samplFile2$fileName, "character")
-    expect_type(samplFile2$fileSize, "double")
-    expect_type(samplFile2$created, "double")
-    expect_type(samplFile2$modified, "double")
-    expect_type(samplFile2$noOfSheets, "integer")
-    expect_type(samplFile2$sheets, "character")
-    expect_type(samplFile2$data, "list")
-})
-
-
-################################################
+#...............................
 context("Spreadsheet integrity")
+#```````````````````````````````
 
 header <- c("serialno", "name", "phone", "address", "email", "bday.day",
             "bday.mth", "wedann.day", "wedann.mth", "occupation", "church",
             "pastor", "info.source")
-
-singleWrkSht1 <- extract_spreadsheets(samplFile1) %>% .[[1]]
-singleWrkSht2 <- extract_spreadsheets(samplFile2) %>% .[[1]]
+samplFile1 <- exhale::excelfile('test-file-1.xls')
+samplFile2 <- exhale::excelfile('test-file-2.xlsx')
+singleWrkSht1 <- extractSpreadsheets(samplFile1) %>% .[[1]]
+singleWrkSht2 <- extractSpreadsheets(samplFile2) %>% .[[1]]
 
 SheetsList <- lapply(list(singleWrkSht1, singleWrkSht2), function(dfr) {
     beacon <- locate_header(dfr, hdr = header)
@@ -53,17 +27,17 @@ test_that("Spreadsheets are properly extracted", {
     expect_is(singleWrkSht1, "tbl_df")
     expect_is(singleWrkSht1, "tbl")
     expect_is(singleWrkSht1, "data.frame")
-    expect_false(inherits(singleWrkSht1, "excelFile"))
+    expect_false(inherits(singleWrkSht1, "excelfile"))
     expect_is(singleWrkSht2, "tbl_df")
     expect_is(singleWrkSht2, "tbl")
     expect_is(singleWrkSht2, "data.frame")
-    expect_false(inherits(singleWrkSht2, "excelFile"))
+    expect_false(inherits(singleWrkSht2, "excelfile"))
 })
 
 
-###################################
+#..............................
 context("Regular expressions")
-
+#``````````````````````````````
 test_that("Object class with regex patterns is properly instantiated", {
     column <-
         c("24 Feb/7 Sept",
@@ -88,9 +62,9 @@ test_that("Object class with regex patterns is properly instantiated", {
 
 
 
-###################################
+#........................
 context("Data integrity")
-
+#````````````````````````
 test_that("Wrong mobile numbers are repaired or removed.", {
     numbers <-
         as.data.frame(
@@ -106,7 +80,7 @@ test_that("Wrong mobile numbers are repaired or removed.", {
                 "070456789011"
             )
         )
-    numbers <- .fix_phone_numbers(numbers)
+    numbers <- .fixPhoneNumbers(numbers)
 
     # Tests proper
     expect_type(numbers, "character")
@@ -115,13 +89,14 @@ test_that("Wrong mobile numbers are repaired or removed.", {
 })
 
 
-##################################################
+#..................................
 context("Data frame restructuring")
+#``````````````````````````````````
 
 test_that("'Month' values are corrected.", {
     mths <-
         c("Apl", "oct ", "September", "Jul", "january", "aug", "decc", "  March")
-    mths <- .fix_mth_entries(mths)
+    mths <- .fixMonthEntries(mths)
     failed <- c("May/Jun 12", "24 Feb/Sept")
 
     expect_equal(mths[[1]][1], "April")
@@ -132,9 +107,9 @@ test_that("'Month' values are corrected.", {
     expect_equal(mths[[1]][6], "August")
     expect_equal(mths[[1]][7], "December")
     expect_equal(mths[[1]][8], "March")
-    expect_error(.fix_mth_entries("Mar."),
+    expect_error(.fixMonthEntries("Mar."),
                  "An invalid character was found at position 1.")
-    expect_error(.fix_mth_entries(failed), "An invalid character")
+    expect_error(.fixMonthEntries(failed), "An invalid character")
 })
 
 test_that("Date entries are fixed", {
@@ -148,8 +123,8 @@ test_that("Date entries are fixed", {
         `WED ANN` = c("", "10/4", "January 5th"),
         stringsAsFactors = FALSE, check.names = FALSE)
 
-    newDates1 <- fix_date_entries(mail1)
-    newDates2 <- fix_date_entries(mail2)
+    newDates1 <- fixDateEntries(mail1)
+    newDates2 <- fixDateEntries(mail2)
 
     # Add a test for cases when there are no funny looking columns
     expect_is(newDates1, "data.frame")
@@ -174,10 +149,10 @@ test_that("Date entries are fixed", {
 
 test_that("numeric Excel dates are converted to text", {
 
-    expect_error(.convert_num_date_to_char(c("41235", "43322")),
+    expect_error(.convertNumDateToChar(c("41235", "43322")),
                  "More than one entry was provided")
-    expect_equal(.convert_num_date_to_char(c("41235")), "22 November")
-    expect_equal(.convert_num_date_to_char(c("43322")), "10 August")
+    expect_equal(.convertNumDateToChar(c("41235")), "22 November")
+    expect_equal(.convertNumDateToChar(c("43322")), "10 August")
 })
 
 
@@ -189,7 +164,7 @@ test_that("unwanted characters/entries are removed", {
               "Aug, 6",
               "12/05/1989",
               "31 Oct/6 July")
-    res <- .cleanup_date_entries(smpl)
+    res <- .cleanupDateEntries(smpl)
 
     expect_equivalent(res[1], "24 Feb")
     expect_equivalent(res[2], "")

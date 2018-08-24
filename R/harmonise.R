@@ -8,14 +8,17 @@
 #'
 #' @param dir character vector of length 1; the path to the folder contains
 #' the Excel files.
+#' @param dest directory where the data will be stored.
 #' @param quiet logical; whether to print informative output or not.
 #'
 #' @import dplyr
 #' @import RSQLite
+#' @importFrom exhale excelfile
 #' @importFrom exhale locate_header
+#' @importFrom tools toTitleCase
 #'
 #' @export
-harmonise_narc_excel <- function(dir, quiet = FALSE)
+harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
 {
   stopifnot(is.character(dir))
   if (length(dir) > 1) {
@@ -37,6 +40,7 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
       "Rearranging columns to suit the prescribed format... ",
       "Merging data frames... ",
       "Setting the data types... ",
+      "Converting all names to title case... ",
       "Creating output directory... ",
       "Writing to database... ",
       "\nThat's all.\n"
@@ -56,18 +60,17 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
     nxt <- n + 1
   }
 
-
   msgIndex <- print_msg()
-  filepaths <- list_excel_files(dir, quietly = quiet)
+  filepaths <- listExcelFiles(dir, quietly = quiet)
   msgIndex <- print_msg(msgIndex)
-  excelList <- lapply(filepaths, excelFile)
+  excelList <- lapply(filepaths, excelfile)
 
   ## In case there's more than one spreadsheet in a workbook
-  df.ls <- extract_spreadsheets(excelList[[1]])
+  df.ls <- extractSpreadsheets(excelList[[1]])
   len <- length(excelList)
   if (len > 1) {
     for (i in 2:len) {
-      tmp <- extract_spreadsheets(excelList[[i]])
+      tmp <- extractSpreadsheets(excelList[[i]])
       df.ls <- append(df.ls, tmp)
     }
     df_row_num <- sapply(df.ls, nrow)
@@ -110,35 +113,37 @@ harmonise_narc_excel <- function(dir, quiet = FALSE)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  df.ls <- lapply(df.ls, fix_date_entries)
+  df.ls <- lapply(df.ls, fixDateEntries)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  df.ls <- lapply(df.ls, update_header, newCol = columnNames)
+  df.ls <- lapply(df.ls, updateHeader, newCol = columnNames)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  df.ls <- lapply(df.ls, rearrange_df, columnNames)
+  df.ls <- lapply(df.ls, rearrangeDataFrame, columnNames)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  master <- combine_dfs(df.ls)
+  master <- combineDataFrames(df.ls)
   success()
 
   msgIndex <- print_msg(msgIndex)
-  master <- set_datatypes(master)
+  master <- setDataTypes(master)
   success()
 
+  msgIndex <- print_msg(msgIndex)
+  master$name <- toTitleCase(master$name)
+  success()
 
   msgIndex <- print_msg(msgIndex)
-  folder <- file.path(dir, "harmonised-data")
-  if (!dir.exists(folder))
-    dir.create(folder)
+  if (!dir.exists(dest))
+    dir.create(dest)
   success()
 
   msgIndex <- print_msg(msgIndex)
   con <-
-    dbConnect(SQLite(), file.path(folder, "NARC-mailing-list.db"))
+    dbConnect(SQLite(), file.path(dest, "NARC-mailing-list.db"))
   if (!dbIsValid(con))
     stop("Connection to database failed.")
   dbTable <- "NARC_mail"
