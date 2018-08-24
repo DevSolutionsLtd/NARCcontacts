@@ -13,6 +13,7 @@
 #'
 #' @import dplyr
 #' @import RSQLite
+#' @importFrom exhale excelfile
 #' @importFrom exhale locate_header
 #' @importFrom tools toTitleCase
 #'
