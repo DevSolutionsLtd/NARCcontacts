@@ -1,55 +1,14 @@
 # test-helpers.R
 
-############################################
-context("Data importation")
-
-xl.files <- c('test-file-1.xls', 'test-file-2.xlsx')
-
-test_that("excelfile constructor input is validated", {
-  expect_error(excelfile(),
-               'argument "file" is missing, with no default')
-  expect_error(excelfile(42),
-               'Expected a character vector')
-  expect_error(excelfile('nopath'),
-               "Path 'file' does not exist")
-  expect_error(excelfile('test-mainfunction.R'),
-               "Expected a file with extension '.xls' or '.xlsx'")
-  expect_warning(excelfile(xl.files),
-                 'Only the first element in "file" was used')
-})
-
-samplFile1 <- excelfile(xl.files[1])
-samplFile2 <- excelfile(xl.files[2])
-
-test_that("Objects are properly instantiated", {
-    expect_is(samplFile1, "excelfile")
-    expect_is(samplFile2, "excelfile")
-    expect_s3_class(samplFile1, "excelfile")
-    expect_s3_class(samplFile2, "excelfile")
-    expect_type(samplFile1$fileName, "character")
-    expect_type(samplFile1$fileSize, "double")
-    expect_type(samplFile1$created, "double")
-    expect_type(samplFile1$modified, "double")
-    expect_type(samplFile1$noOfSheets, "integer")
-    expect_type(samplFile1$sheets, "character")
-    expect_type(samplFile2$data, "list")
-    expect_type(samplFile2$fileName, "character")
-    expect_type(samplFile2$fileSize, "double")
-    expect_type(samplFile2$created, "double")
-    expect_type(samplFile2$modified, "double")
-    expect_type(samplFile2$noOfSheets, "integer")
-    expect_type(samplFile2$sheets, "character")
-    expect_type(samplFile2$data, "list")
-})
-
-
-################################################
+#...............................
 context("Spreadsheet integrity")
+#```````````````````````````````
 
 header <- c("serialno", "name", "phone", "address", "email", "bday.day",
             "bday.mth", "wedann.day", "wedann.mth", "occupation", "church",
             "pastor", "info.source")
-
+samplFile1 <- exhale::excelfile('test-file-1.xls')
+samplFile2 <- exhale::excelfile('test-file-2.xlsx')
 singleWrkSht1 <- extractSpreadsheets(samplFile1) %>% .[[1]]
 singleWrkSht2 <- extractSpreadsheets(samplFile2) %>% .[[1]]
 
@@ -76,9 +35,9 @@ test_that("Spreadsheets are properly extracted", {
 })
 
 
-###################################
+#..............................
 context("Regular expressions")
-
+#``````````````````````````````
 test_that("Object class with regex patterns is properly instantiated", {
     column <-
         c("24 Feb/7 Sept",
@@ -103,9 +62,9 @@ test_that("Object class with regex patterns is properly instantiated", {
 
 
 
-###################################
+#........................
 context("Data integrity")
-
+#````````````````````````
 test_that("Wrong mobile numbers are repaired or removed.", {
     numbers <-
         as.data.frame(
@@ -130,8 +89,9 @@ test_that("Wrong mobile numbers are repaired or removed.", {
 })
 
 
-##################################################
+#..................................
 context("Data frame restructuring")
+#``````````````````````````````````
 
 test_that("'Month' values are corrected.", {
     mths <-
