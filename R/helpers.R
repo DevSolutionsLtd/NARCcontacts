@@ -88,32 +88,28 @@ listExcelFiles <- function(path = ".", quietly = FALSE)
   # may not be specified and thus there may be need to
   # test such files to know whether they are of the format.
 
+  # Get path to EXcel files and remove any backup files (Windows, sigh!)
   xlFiles <-
-    list.files(path, pattern = ".xlsx$|.xls$", full.names = TRUE)
+    list.files(path, pattern = ".xlsx$|.xls$", full.names = TRUE) %>%
+    subset(!grepl("(~\\$)+", .))
 
-  # remove any backup files (Windows)
-  xlFiles <- subset(xlFiles, !grepl("(~\\$)+", xlFiles))
-
-  numFiles <- length(xlFiles)
-  if (!numFiles) {
+  if (isFALSE(numFiles <- length(xlFiles)))
     stop("There are no Excel files in this directory.")
-  } else {
-    if (!quietly) {
-      cat(sprintf(
-        ngettext(
-          numFiles,
-          "%d Excel file was found in %s:\n",
-          "%d Excel files were found in %s:\n"
-        ),
-        numFiles,
-        sQuote(path.expand(path))
-      ))
+  if (isFALSE(quietly)) {
+    message(sprintf(
+      paste0(
+        "** %d Excel file",
+        ngettext(numFiles, ' was', 's were'),
+        ' found in %s:\n'
+      ),
+      numFiles,
+      sQuote(path.expand(path))
+    ), appendLF = FALSE)
 
-      ## Print the list of files
-      sapply(xlFiles, function(x) {
-        cat(sprintf("* %s\n", basename(x)))
-      })
-    }
+    ## Print the list of files
+    sapply(xlFiles, function(x) {
+      message(sprintf("*** %s\n", basename(x)), appendLF = FALSE)
+    })
   }
   xlFiles
 }
