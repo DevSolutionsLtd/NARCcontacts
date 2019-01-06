@@ -1,9 +1,7 @@
 # test-helpers.R
 
-#...............................
-context("Spreadsheet integrity")
-#```````````````````````````````
 
+# Prep
 header <- c("serialno", "name", "phone", "address", "email", "bday.day",
             "bday.mth", "wedann.day", "wedann.mth", "occupation", "church",
             "pastor", "info.source")
@@ -13,12 +11,27 @@ singleWrkSht1 <- extractSpreadsheets(samplFile1) %>% .[[1]]
 singleWrkSht2 <- extractSpreadsheets(samplFile2) %>% .[[1]]
 
 SheetsList <- lapply(list(singleWrkSht1, singleWrkSht2), function(dfr) {
-    beacon <- locate_header(dfr, hdr = header)
-    dfr <- dfr %>%
-        slice(beacon$nextrow:n())
-    colnames(dfr) <- beacon$header
-    dfr
+  beacon <- locate_header(dfr, hdr = header)
+  dfr <- dfr %>%
+    slice(beacon$nextrow:n())
+  colnames(dfr) <- beacon$header
+  dfr
 })
+
+# Tests
+# ......................
+context('File listing')
+# ``````````````````````
+
+test_that('Messages are printed', {
+  expect_message(listExcelFiles('test-dir'))
+})
+
+
+#...............................
+context("Spreadsheet integrity")
+#```````````````````````````````
+
 
 singleWrkSht1 <- SheetsList[[1]]
 singleWrkSht2 <- SheetsList[[2]]
