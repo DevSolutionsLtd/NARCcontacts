@@ -290,7 +290,7 @@ setDataTypes <- function(df) {
     lapply(colm, function(var) {
         if (var %in% chars) {
             if (identical(var, "phone"))
-                df[[var]]  <- .fixPhoneNumbers(df[[var]])
+                df[[var]]  <- fix_phone_numbers(df[[var]])
             df[[var]] <- as.character(df[[var]])
         }
         else if (var %in% cats) {
@@ -320,10 +320,21 @@ setDataTypes <- function(df) {
 
 
 
-## Fixes up mobile numbers to a uniform text format
+#' Fix up mobile numbers
+#'
+#' Fixes up mobile numbers to a uniform text format.
+#'
+#' @details This format is specific to that used in a given location - for
+#' now the function is useful only for Nigeria mobile numbers which come in
+#' the format expressed by the regex pattern \code{"^0[7-9][0-1][0-9]{8}$"}.
+#'
+#' @param column A character vector of numerical string characters.
+#'
 #' @importFrom dplyr %>%
 #' @importFrom stringr str_replace
-.fixPhoneNumbers <- function(column) {
+#'
+#' @export
+fix_phone_numbers <- function(column) {
     # Remove entries that are beyond redemption i.e. too long or too short
     column <-
         ifelse(nchar(column) > 11 | nchar(column) < 10, NA_character_, column)

@@ -93,7 +93,7 @@ test_that("Wrong mobile numbers are repaired or removed.", {
                 "070456789011"
             )
         )
-    numbers <- .fixPhoneNumbers(numbers)
+    numbers <- fix_phone_numbers(numbers)
 
     # Tests proper
     expect_type(numbers, "character")
