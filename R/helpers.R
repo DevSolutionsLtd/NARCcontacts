@@ -1,5 +1,6 @@
 # helpers.R
 
+globalVariables('.')
 
 ################################
 ##         S3 objects         ##
@@ -223,10 +224,20 @@ updateHeader <- function(df, newCol) {
 
 
 
-
-## Rearranges the columns of data frames to suit the prescribed
-## format. Columns without values are assigned NA.
-rearrangeDataFrame <- function(df, hdr) {
+#' Rearrange data frame columns
+#'
+#' Rearranges the columns of data frames to suit the prescribed
+#' format. Columns without values are assigned NA.
+#'
+#' @param df An object of class \code{data.frame}
+#' @param hdr A character vector containing names of outputted data frame
+#' appearing in the desired order.
+#'
+#' @return A data frame.
+#'
+#' @export
+# TODO: Write test.
+rearrange_df <- function(df, hdr) {
     if (!is.data.frame(df))
         stop("'df' is not a valid data frame.")
     if (!is.character(hdr))
@@ -290,7 +301,7 @@ setDataTypes <- function(df) {
     lapply(colm, function(var) {
         if (var %in% chars) {
             if (identical(var, "phone"))
-                df[[var]]  <- .fixPhoneNumbers(df[[var]])
+                df[[var]]  <- fix_phone_numbers(df[[var]])
             df[[var]] <- as.character(df[[var]])
         }
         else if (var %in% cats) {
@@ -311,33 +322,6 @@ setDataTypes <- function(df) {
     }) %>%
         as.data.frame(col.names = colm, stringsAsFactors = FALSE)
 }
-
-
-
-
-
-
-
-
-
-## Fixes up mobile numbers to a uniform text format
-#' @importFrom dplyr %>%
-#' @importFrom stringr str_replace
-.fixPhoneNumbers <- function(column) {
-    # Remove entries that are beyond redemption i.e. too long or too short
-    column <-
-        ifelse(nchar(column) > 11 | nchar(column) < 10, NA_character_, column)
-
-    # Add a leading '0' if there are 10 digits
-    column <- column %>%
-        as.character() %>%
-        str_replace("(^[0-9]{10}$)", "0\\1")
-
-    # Remove those that still don't look like local mobile numbers (NG)
-    column <-
-        ifelse(grepl("^0[7-9][0-1][0-9]{8}$", column), column, NA_character_)
-}
-
 
 
 

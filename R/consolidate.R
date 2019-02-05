@@ -1,7 +1,12 @@
 # consolidate.R
 
+globalVariables(c('name', 'serialno', 'phone', 'email', '.'))
+
 #' Consolidation of Database entries (with focus on duplications)
 #'
+#' @param db The database file (SQLite).
+#'
+#' @importFrom utils menu
 #' @export
 consolidate_narc_mail <- function(db)
 {
@@ -15,7 +20,8 @@ consolidate_narc_mail <- function(db)
 
   df_pre <- aggregateDuplicatedVals(dat)
   skip <-
-    menu(c('Yes', 'No'), t = "NEXT: Fill in missing values. Continue?") %>%
+    menu(c('Yes', 'No'),
+         title = "NEXT: Fill in missing values. Continue?") %>%
     {
       isTRUE(. == 2)
     }
@@ -93,26 +99,29 @@ fillMissingVals <- function(d, skip = FALSE)
 
 
 
-
-storeConsolidatedData <- function(df, db)
+#' @importFrom utils menu
+storeConsolidatedData <- function(df, db, table = 'mail_consolid')
 {
   cat("NEXT: Save consolidated data to disk\n")
-  pause()
-  nuTbl <- "mail_consolid"
-  cat(sprintf("* Store data in table '%s'... ", nuTbl))
+  if (interactive())
+    pause()
+  cat(sprintf("* Store data in table '%s'... ", table))
   dbcon <- dbConnect(SQLite(), db)
   on.exit(dbDisconnect(dbcon))
-  if (nuTbl %in% dbListTables(dbcon)) {
+  if (table %in% dbListTables(dbcon) & interactive()) {
     write <-
       menu(choices = c("Yes", "No"),
            title = "\nYou are about to overwrite an existing table. Continue?")
+    if (identical(write, 1L)) {
+      dbWriteTable(dbcon, table, df, overwrite = TRUE)
+      cat("* The data were saved.\nConsolidation completed.\n")
+    } else if (identical(write, 2L)) {
+      message("The data were not stored on disk.")
+    }
+    return(NULL)
   }
-  if (identical(write, 1L)) {
-    dbWriteTable(dbcon, nuTbl, df, overwrite = TRUE)
-    cat("* The data were saved.\nConsolidation completed.\n")
-  } else if (identical(write, 2L)) {
-    message("The data were not stored on disk.")
-  }
+  dbWriteTable(dbcon, table, df)
+  cat("Done\n")
 }
 
 
@@ -166,6 +175,7 @@ pause <- function() {
 
 
 ## Allows user to interactively fix multiple entries (by variable)
+#' @importFrom utils menu
 .fixMultipleValues <- function(dataframe) {
   uniq <- unique(dataframe$name)
   lapply(uniq, function(N) {
