@@ -4,13 +4,18 @@
 \alias{harmonise_narc_excel}
 \title{Harmonise Nehemiah's Data}
 \usage{
-harmonise_narc_excel(dir, dest = "./data", quiet = FALSE)
+harmonise_narc_excel(dir, dest = "./data", newcols, dbTable = "NARC_mail",
+  quiet = FALSE)
 }
 \arguments{
 \item{dir}{character vector of length 1; the path to the folder contains
 the Excel files.}
 
 \item{dest}{directory where the data will be stored.}
+
+\item{newcols}{The new columns that are to be created.}
+
+\item{dbTable}{The database table where the end-product are stored.}
 
 \item{quiet}{logical; whether to print informative output or not.}
 }
