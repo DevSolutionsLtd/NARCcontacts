@@ -6,6 +6,9 @@
 \usage{
 consolidate_narc_mail(db)
 }
+\arguments{
+\item{db}{The database file (SQLite).}
+}
 \description{
 Consolidation of Database entries (with focus on duplications)
 }

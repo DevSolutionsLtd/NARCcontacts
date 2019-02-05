@@ -9,6 +9,8 @@
 #' @param dir character vector of length 1; the path to the folder contains
 #' the Excel files.
 #' @param dest directory where the data will be stored.
+#' @param newcols The new columns that are to be created.
+#' @param dbTable The database table where the end-product are stored.
 #' @param quiet logical; whether to print informative output or not.
 #'
 #' @import dplyr
@@ -18,8 +20,13 @@
 #' @importFrom tools toTitleCase
 #'
 #' @export
-harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
+harmonise_narc_excel <- function(dir,
+                                 dest = "./data",
+                                 newcols,
+                                 dbTable = "NARC_mail",
+                                 quiet = FALSE)
 {
+  # TODO: This function is way too large!
   stopifnot(is.character(dir))
   if (length(dir) > 1) {
     dir <- dir[1]
@@ -29,40 +36,9 @@ harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
   if (!dir.exists(dir))
     stop(paste("There is no directory called", sQuote(basename(dir))))
 
-  ## Output Messages
-  msgs <-
-    c(
-      "\nChecking for Excel files in the directory...\n",
-      "Importing details of Excel file(s) into R... ",
-      "Identifying and afixing original headers... ",
-      "Working on date-related columns... ",
-      "Updating original headers... ",
-      "Rearranging columns to suit the prescribed format... ",
-      "Merging data frames... ",
-      "Setting the data types... ",
-      "Converting all names to title case... ",
-      "Creating output directory... ",
-      "Writing to database... ",
-      "\nThat's all.\n"
-    )
-
-  ## Internal functions for output
-  success <- function(){
-    if(!quiet)
-      cat("Done\n")
-  }
-
-  print_msg <- function(n = 1) {
-    if (quiet)
-      return(NULL)
-    n <- as.integer(n)
-    cat(msgs[n])
-    nxt <- n + 1
-  }
-
-  msgIndex <- print_msg()
+  msgIndex <- .print_msg()
   filepaths <- listExcelFiles(dir, quietly = quiet)
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   excelList <- lapply(filepaths, excelfile)
 
   ## In case there's more than one spreadsheet in a workbook
@@ -76,26 +52,10 @@ harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
     df_row_num <- sapply(df.ls, nrow)
     df.ls <- df.ls[which(df_row_num != 0)]
   }
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
 
-  ## The names of the columns of the new table
-  columnNames <- c(
-    "serialno",
-    "name",
-    "phone",
-    "address",
-    "email",
-    "bday.day",
-    "bday.mth",
-    "wedann.day",
-    "wedann.mth",
-    "occupation",
-    "church",
-    "pastor",
-    "info.source"
-  )
   df.ls <- lapply(df.ls, function(df) {
     val <- exhale::locate_header(df, hdr = columnNames)
     if (!is.null(val)) {
@@ -110,43 +70,43 @@ harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
       df <- data.frame(0)
     }
   })
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   df.ls <- lapply(df.ls, fixDateEntries)
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   df.ls <- lapply(df.ls, updateHeader, newCol = columnNames)
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
-  df.ls <- lapply(df.ls, rearrangeDataFrame, columnNames)
-  success()
+  msgIndex <- .print_msg(msgIndex)
+  df.ls <- lapply(df.ls, rearrange_df, columnNames)
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   master <- combineDataFrames(df.ls)
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   master <- setDataTypes(master)
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   master$name <- toTitleCase(master$name)
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   if (!dir.exists(dest))
     dir.create(dest)
-  success()
+  .success()
 
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
   con <-
     dbConnect(SQLite(), file.path(dest, "NARC-mailing-list.db"))
   if (!dbIsValid(con))
     stop("Connection to database failed.")
-  dbTable <- "NARC_mail"
+
   dbWriteTable(conn = con, dbTable, master, append = TRUE)
 
   ## Deal with wholesale replications and empty records
@@ -162,9 +122,19 @@ harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
   if (dbIsValid(con)) {
     warning("The database connection was not properly closed.")
   } else {
-    success()
+    .success()
   }
-  msgIndex <- print_msg(msgIndex)
+  msgIndex <- .print_msg(msgIndex)
+}
+
+
+
+
+## Informational messages
+.print_msg <- function(n = 1) {
+  n <- as.integer(n)
+  message(sprintf("* %s", msgs[n]), appendLF = FALSE)
+  nxt <- n + 1
 }
 
 
@@ -172,4 +142,49 @@ harmonise_narc_excel <- function(dir, dest = "./data", quiet = FALSE)
 
 
 
+## Internal functions for output
+.success <- function(){
+    message(sprintf("Done\n"), appendLF = FALSE)
+}
 
+
+
+
+
+
+## Output Messages
+msgs <-
+  c(
+    "\nChecking for Excel files in the directory...\n",
+    "Importing details of Excel file(s) into R... ",
+    "Identifying and afixing original headers... ",
+    "Working on date-related columns... ",
+    "Updating original headers... ",
+    "Rearranging columns to suit the prescribed format... ",
+    "Merging data frames... ",
+    "Setting the data types... ",
+    "Converting all names to title case... ",
+    "Creating output directory... ",
+    "Writing to database... ",
+    "\nThat's all.\n"
+  )
+
+
+
+
+## The names of the columns of the new table
+columnNames <- c(
+  "serialno",
+  "name",
+  "phone",
+  "address",
+  "email",
+  "bday.day",
+  "bday.mth",
+  "wedann.day",
+  "wedann.mth",
+  "occupation",
+  "church",
+  "pastor",
+  "info.source"
+)

@@ -1,5 +1,7 @@
 # check-data.R
 
+globalVariables('df')
+
 # Helper functions for Data Integrity Checks after the consolidation
 
 checkDataIntegrity <- function(df_r, df_p, skip = FALSE)
@@ -8,19 +10,19 @@ checkDataIntegrity <- function(df_r, df_p, skip = FALSE)
     return(NULL)
   cat("NEXT: Check integrity of the data. (Please review the output!)\n")
   pause()
-  testsPassed <- NULL %>% 
-    typesUnchanged(df_r, df_p) %>% 
-    noEmptyFields(df_p) %>% 
-    noMissingNames(df_p) %>% 
-    noDuplicatedNames(df_p) %>% 
-    noDuplicatedPhone(df_p) %>% 
+  testsPassed <- NULL %>%
+    typesUnchanged(df_r, df_p) %>%
+    noEmptyFields(df_p) %>%
+    noMissingNames(df_p) %>%
+    noDuplicatedNames(df_p) %>%
+    noDuplicatedPhone(df_p) %>%
     noDuplicatedEmail(df_p) %>%
     noEmptyRows(df_p)
-  
+
   if (!all(testsPassed)) {
     message("Some data integrity checks failed. Kindly review the output.")
   }
-  
+
   cat("* Proportion of cells with missing values... ")
   htWidth <- dim(df)
   allCells <- htWidth[1] * htWidth[2]
