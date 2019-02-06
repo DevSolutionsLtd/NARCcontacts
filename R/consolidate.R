@@ -30,7 +30,7 @@ consolidate_narc_mail <- function(db)
   df_post <- fillMissingVals(df_pre, skip = skip)
   checkDataIntegrity(df_pre, df_post, skip = skip)
   storeConsolidatedData(df_post, db)
-
+  df_post
 }
 
 
@@ -99,6 +99,7 @@ fillMissingVals <- function(d, skip = FALSE)
 
 
 
+#' @import RSQLite
 #' @importFrom utils menu
 storeConsolidatedData <- function(df, db, table = 'mail_consolid')
 {
@@ -108,22 +109,24 @@ storeConsolidatedData <- function(df, db, table = 'mail_consolid')
   cat(sprintf("* Store data in table '%s'... ", table))
   dbcon <- dbConnect(SQLite(), db)
   on.exit(dbDisconnect(dbcon))
-  if (table %in% dbListTables(dbcon) & interactive()) {
-    write <-
-      menu(choices = c("Yes", "No"),
-           title = "\nYou are about to overwrite an existing table. Continue?")
-    if (identical(write, 1L)) {
-      dbWriteTable(dbcon, table, df, overwrite = TRUE)
-      cat("* The data were saved.\nConsolidation completed.\n")
-    } else if (identical(write, 2L)) {
-      message("The data were not stored on disk.")
+  if (table %in% dbListTables(dbcon)) {
+    if (interactive()) {
+      write <-
+        menu(choices = c("Yes", "No"),
+             title = "\nYou are about to overwrite an existing table. Continue?")
+      if (identical(write, 1L))
+        message(sprintf("You opted to overwrite '%s'", table))
+      if (identical(write, 2L)) {
+        message("The data were not stored on disk.")
+        invisible(return(NULL))
+      }
     }
-    return(NULL)
+    if (is.null(write))
+      warning(sprintf("Automatically overwriting existing table '%s'.", table))
   }
-  dbWriteTable(dbcon, table, df)
+  dbWriteTable(dbcon, table, df, overwrite = TRUE)
   cat("Done\n")
 }
-
 
 
 
