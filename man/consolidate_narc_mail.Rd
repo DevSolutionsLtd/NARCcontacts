@@ -4,11 +4,24 @@
 \alias{consolidate_narc_mail}
 \title{Consolidation of Database entries (with focus on duplications)}
 \usage{
-consolidate_narc_mail(db)
+consolidate_narc_mail(db, table = "NARC_mail")
 }
 \arguments{
 \item{db}{The database file (SQLite).}
+
+\item{table}{The database table to be consolidated; a character vector of
+length 1.}
+}
+\value{
+The functions returns a copy of the consolidated data frame. A side
+effect is the creation of a table through internal implementation. That
+table is named \italics{consolidated}.
 }
 \description{
 Consolidation of Database entries (with focus on duplications)
+}
+\details{
+The default argument for the \code{table} parameter is
+\italics{NARC_mail}. This is kept for backward compatibility with earlier
+code that was specifically tailored for use by this function.
 }

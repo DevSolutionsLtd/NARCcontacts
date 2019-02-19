@@ -5,14 +5,33 @@ globalVariables(c('name', 'serialno', 'phone', 'email', '.'))
 #' Consolidation of Database entries (with focus on duplications)
 #'
 #' @param db The database file (SQLite).
+#' @param table The database table to be consolidated; a character vector of
+#' length 1.
+#'
+#' @details The default argument for the \code{table} parameter is
+#' \italics{NARC_mail}. This is kept for backward compatibility with earlier
+#' code that was specifically tailored for use by this function.
+#'
+#' @return The functions returns a copy of the consolidated data frame. A side
+#' effect is the creation of a table through internal implementation. That
+#' table is named \italics{consolidated}.
 #'
 #' @importFrom utils menu
 #' @export
-consolidate_narc_mail <- function(db)
+consolidate_narc_mail <- function(db, table = "NARC_mail")
 {
-  ## Load the data
+  stopifnot({
+    inherits(db, "character")
+    inherits(table, "character")
+  })
+  if (!file.exists(db))
+    stop("File ", sQuote(db), " does not exist.") # TODO: Write tests to capture validation
+  if (length(db) > 1) {
+    db <- db[1]
+    warning("'db' must be of length 1L; elements beyond the first were removed")
+  }
   cat("* Overview of the data:\n")
-  dat <- importDataFromDb(db, "NARC_mail") %>%
+  dat <- importDataFromDb(db, table) %>%
     as_tibble() %>%
     print()
 
@@ -101,11 +120,12 @@ fillMissingVals <- function(d, skip = FALSE)
 
 #' @import RSQLite
 #' @importFrom utils menu
-storeConsolidatedData <- function(df, db, table = 'mail_consolid')
+storeConsolidatedData <- function(df, db)
 {
   cat("NEXT: Save consolidated data to disk\n")
   if (interactive())
     pause()
+  table <- "consolidated"
   cat(sprintf("* Store data in table '%s'... ", table))
   dbcon <- dbConnect(SQLite(), db)
   on.exit(dbDisconnect(dbcon))

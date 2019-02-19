@@ -6,6 +6,12 @@ library(purrr)
 
 context("Storage of consolidated data")
 
+test_that("Input is validated", {
+  expect_error(consolidate_narc_mail())
+  expect_error(consolidate_narc_mail(data.frame(2), data.frame(2)))
+  expect_error(consolidate_narc_mail('fake.file/path.wht', 'dud'))
+})
+
 test_that("Data are properly stored", {
 
   # Test saving of brand-new database
