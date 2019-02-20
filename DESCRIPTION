@@ -1,6 +1,6 @@
 Package: NARCcontacts
 Title: Harmonisation of Contact Data
-Version: 0.1.7.9003
+Version: 0.1.7.9004
 Authors@R: person("Victor", "Ordu", email = "victorordu@outlook.com",
     role = c("aut", "cre"))
 Description: Harmonisation of contact data for Nehemiah Apostolic Recource

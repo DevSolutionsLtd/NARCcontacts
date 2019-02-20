@@ -15,13 +15,13 @@ length 1.}
 \value{
 The functions returns a copy of the consolidated data frame. A side
 effect is the creation of a table through internal implementation. That
-table is named \italics{consolidated}.
+table is named \emph{consolidated}.
 }
 \description{
 Consolidation of Database entries (with focus on duplications)
 }
 \details{
 The default argument for the \code{table} parameter is
-\italics{NARC_mail}. This is kept for backward compatibility with earlier
+\emph{NARC_mail}. This is kept for backward compatibility with earlier
 code that was specifically tailored for use by this function.
 }
