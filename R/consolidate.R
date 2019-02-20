@@ -80,7 +80,6 @@ aggregateDuplicatedVals <- function(x)
   cat("* Sort the data frame by 'name':\n")
   arr <- x %>%
     as_tibble() %>%
-    select(-serialno) %>%
     distinct() %>%
     arrange(name)
   print(arr)
