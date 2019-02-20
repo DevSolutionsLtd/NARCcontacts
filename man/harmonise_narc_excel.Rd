@@ -4,8 +4,8 @@
 \alias{harmonise_narc_excel}
 \title{Harmonise Nehemiah's Data}
 \usage{
-harmonise_narc_excel(dir, dest = "./data", newcols, dbTable = "NARC_mail",
-  quiet = FALSE)
+harmonise_narc_excel(dir, dest = "./data", newcols,
+  dbTable = "NARC_mail", quiet = FALSE)
 }
 \arguments{
 \item{dir}{character vector of length 1; the path to the folder contains

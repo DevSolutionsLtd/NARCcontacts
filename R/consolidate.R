@@ -16,6 +16,13 @@ globalVariables(c('name', 'serialno', 'phone', 'email', '.'))
 #' effect is the creation of a table through internal implementation. That
 #' table is named \emph{consolidated}.
 #'
+#' @note In its current state, the function preloads the data internally.
+#' Thus, regardless of the way data are loaded in the global environment,
+#' they are reloaded from the table from scratch. Where the table does not
+#' have a 'serialno' column, the function fails. The real problem is the fact
+#' that the function is tailor-made for a data table that comes with specific
+#' field format. This is something that would be reconsidered in future.
+#'
 #' @importFrom utils menu
 #' @export
 consolidate_narc_mail <- function(db, table = "NARC_mail")
